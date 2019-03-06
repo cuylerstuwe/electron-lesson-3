@@ -1,5 +1,7 @@
 // @ts-check
 
+const MainWindow = require('./app/MainWindow');
+
 const path = require('path');
 const electron = require('electron');
 
@@ -15,17 +17,7 @@ let tray;
 
 app.on('ready', () => {
     app.dock.hide();
-    mainWindow = new BrowserWindow({
-        height: 500,
-        width: 300,
-        frame: false,
-        resizable: false,
-        show: false
-    });
-
-    mainWindow.on('blur', () => {
-        mainWindow.hide();
-    })
+    mainWindow = new MainWindow();
 
     mainWindow.loadURL(`file://${__dirname}/src/index.html`);
     
