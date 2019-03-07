@@ -2,6 +2,7 @@ const electron = require('electron');
 const ffmpeg = require('fluent-ffmpeg');
 const util = require('util');
 const bluebird = require('bluebird');
+const path = require('path');
 
 const probePromise = bluebird.promisify(ffmpeg.ffprobe);
 
@@ -28,4 +29,24 @@ ipcMain.on('videos:added', async (e, videos) => {
     const allVideosMetadata = await promises;
     const results = allVideosMetadata.map((videoMetadata, i) => Object.assign({}, videos[i], {duration: videoMetadata.format.duration, format: 'avi' }));
     mainWindow.webContents.send('metadata:complete', results);
+});
+
+ipcMain.on('conversion:start', (e, videos) => {
+
+    for (const video of videos) {
+
+        const outputName = video.name.replace(/\.[^.]+$/, "");
+        const outputDir = path.dirname(video.path);
+
+        console.log(outputName, outputDir);
+
+        const fullOutputPath = path.join(outputDir, outputName + "." + video.format);
+
+        ffmpeg(video.path)
+            .output(fullOutputPath)
+            .on('progress', ({ timemark }) => { mainWindow.webContents.send('conversion:progress', { video, timemark } ) })
+            .on('end', () => mainWindow.webContents.send('conversion:end', { video: video, outputPath: fullOutputPath }))
+            .run();
+    }
+
 });
